@@ -1,0 +1,94 @@
+doctype
+html
+    head
+      title= title || 'searching service'
+      link(rel='stylesheet' href='/main.css')
+    body
+        form#search-form(method='get')
+          span 
+            strong search service 
+          input#search
+          select#type
+            option(value='') no type
+            option(value='cafe') cafe
+            option(value='store') store
+            option(value='bank') bank
+            option(value='school') school
+          button#search-btn.btn(type='submit') Search!
+          button#loc-search-btn.btn(type='button') Search Surroundings!
+          ul#search-list
+        block content
+        script.
+          let timer;
+          document.querySelector('#search').addEventListener('keyup', function(e){
+              var xhr = new XMLHttpRequest();
+              xhr.onreadystatechange = () => {
+                if(xhr.readyState === xhr.DONE){
+                    if(xhr.status === 200){
+                        var predictions = JSON.parse(xhr.responseText);
+                        var ul = document.querySelector('#search-list');
+                        ul.innerHTML = '';
+                        predictions.forEach(function (pred){
+                            var li = document.createElement('li');
+                            li.textContent = pred.terms[0].value;
+                            li.onclick = function (){
+                                location.href = '/search/' + pred.terms[0].value;
+                            }
+                            ul.appendChild(li);
+                        });
+                    }
+                    else{
+                        console.error(xhr.responseText);
+                    }
+                }
+              };
+              let query = this.value.trim();
+              if(timer) {
+                  clearTimeout(timer);
+              }
+              timer = setTimeout(function() {
+                  if(query){
+                      xhr.open('GET', '/autocomplete/' + query);
+                      xhr.send();
+                  }
+              }, 200);
+          });
+          document.querySelector('#search-form').addEventListener('submit', function(e) {
+              e.preventDefault();
+              if(!this.search.value || !this.search.value.trim()){
+                  this.search.focus();
+                  return false;
+              }
+              if(this.type.value){
+                  return document.href = '/search/' + this.search.value.trim() + '?type=' + this.type.value;   
+              }
+              this.action = '/search/' + this.search.value.trim();
+              return this.submit();
+          });
+
+          document.querySelector('#loc-search-btn').addEventListener('click', function(e){
+              e.preventDefault();
+              if(navigator.geolocation){
+                  navigator.geolocation.getCurrentPosition(function(position){
+                      const search = document.querySelector('#search');
+                      const type = document.querySelector('#type').value;
+
+                      if(!search.value || !search.value.trim()){
+                          search.focus();
+                          return false;
+                      }
+                      const lat = position.coords.latitude;
+                      const lng = position.coords.longitude; 
+                      location.href = '/search/' + search.value.trim() + '?lat=' + lat + '&lng=' + lng + '&type=' + type;
+                  }, function(){
+                    alert('Reqeusting your permission to use your location.');
+                  }, {
+                        enableHighAccuracy: false,
+                        maximumAge: 0,
+                        timout: Infinity
+                  });
+              }
+              else{
+                  alert('GPS is not available.');
+              }
+          });

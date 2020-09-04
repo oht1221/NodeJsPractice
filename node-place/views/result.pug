@@ -1,0 +1,65 @@
+extends layout
+
+block content
+  h1= query + ' search result(' + results.length + ')'
+  #map
+  script.
+    let positions = [];
+  for result in results
+    script.
+      positions.push({
+          lat: #{result.geometry.location.lat},
+          lng: #{result.geometry.location.lng},
+          name: '#{result.name}',
+          id: '#{result.place_id}'
+      });
+  script.
+    function initMap(){
+        const center = positions[0] || { lat: 37.540705, lng: 126.956764 };
+        const map = new google.maps.Map(document.getElementById('map'), {
+            zoom: 13,
+            center
+        });
+        positions.forEach(function(pos) { 
+            const marker = new google.maps.Marker({
+                position: { lat: pos.lat, lng: pos.lng },
+                map: map,
+                title: pos.name
+            });
+            const div = document.createElement('div');
+            const h1 = document.createElement('h1');
+            const buttonAdd = document.createElement('button');
+            
+            h1.textContent = pos.name;
+            buttonAdd.classList.add('btn');
+
+            buttonAdd.textContent = 'Add to Fav List';
+
+            buttonAdd.onclick = () => {
+                const xhr = new XMLHttpRequest();
+                xhr.onload = () => {
+                    if(xhr.status = 200){
+                        location.href = '/';
+                    }    
+                }; 
+                
+                xhr.open('POST', '/location/' + pos.id + '/favorite');
+                xhr.setRequestHeader('Content-Type', 'application/json');
+                xhr.send(JSON.stringify({
+                    name: pos.name,
+                    lat: pos.lat,
+                    lng: pos.lng
+                }));
+            };
+
+            div.appendChild(h1);
+            div.appendChild(buttonAdd);
+            const infoWindow = new google.maps.InfoWindow({
+                content: div
+            });
+            marker.addListener('click', () => {
+                infoWindow.open(map, marker);
+            });
+        });
+    }
+  script(async, defer, src="https://maps.googleapis.com/maps/api/js" + "?key=" + process.env.API_KEY + "&callback=initMap")

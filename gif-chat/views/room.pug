@@ -1,0 +1,10 @@
+extends layout
+
+block content
+  fieldset
+    legend create a chatting room
+    form(action='/room' method='post')
+      div: input(name='title' placeholder='title')
+      div: input(name='max' type='number' placeholder='capacity(minimum : 2)' min='2' value='10')
+      div: input(name='password' type='password' placeholder='password(leave it empty if you want a public room)')
+      div: button(type='submit') create

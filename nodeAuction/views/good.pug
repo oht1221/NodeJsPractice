@@ -1,0 +1,15 @@
+extends layout
+
+block content
+  .timeline
+    form#good-form(action='/good' method='post' enctype='multipart/form-data')
+      .input-group
+        label(for='good-name') Title
+        input#good-name(name='name' required autofocus)
+      .input-group
+        label(for='good-photo') Image
+        input#good-photo(type='file' name='img' required)
+      .input-group
+        label(for='good-price') Initial Price
+        input#good-price(type='number' name='price' required)
+      button#join-btn.btn(type='submit') Register!

@@ -1,0 +1,50 @@
+doctype
+html
+  head
+    meta(charset='utf-8')
+    title NodeBird Login
+    style.
+      .input-group label {
+        width: 200px;
+        display: inline-block;
+      }
+  
+  body
+    if user && user.id
+      span.user-name= 'Hi!' + user.nick
+      a(href='/auth/logout'): button Logout
+      fieldset
+        legend register a domain
+        form(action='/domain' method='post')
+          div
+            label(for='type-free') Free
+            input#type-free(type='radio' name='type' value='free')
+            label(for='type-premium') Premium
+            input#type-premium(type='radio' name='type' value='premium')
+          div
+            label(for='host') Domain 
+            input#host(name='host' placeholder="ex) oht1221.com")
+          button Save
+      table
+        tr
+          th Domain Address |
+          th Type |
+          th Client's Secret Key |
+        for domain in user.domains
+          tr
+            td= domain.host
+            td= domain.type
+            td= domain.clientSecret
+    else
+      form#login-form(action='/auth/login' method='post')
+        h2 login with a NodeBird account.
+        .input-group
+          label(for='email') Email
+          input#email(type='email' name='email' required autofocus)
+        .input-group
+          label(for='password') Password
+          input#password(type='password' name='password' required)
+        if loginError
+          .error-message= loginError
+        a(href='/join'): button#join(type='button') Join
+        button#login(type='submit') Login

@@ -1,0 +1,89 @@
+extends layout
+
+block good
+  h2= good.name
+  div= 'owner: ' + good.owner.nick
+  div= 'initial price: $' + good.price
+  strong#time(data-start=good.createdAt)
+  img#good-img(src='/img/' + good.img)
+
+block content
+  .timeline
+    #bid
+      for bid in auction
+        div
+          span= bid.user.nick + ' has bid '
+          strong= '$' + bid.bid 
+          if bid.msg
+            span= '(' + bid.msg + ')'
+    form#bid-form
+      input(type='number' name='bid' placeholder='bidding price: ' required min=good.price)
+      input(type='msg' name='msg' placeholder='message(optional)' maxlength='100')
+      button.btn(type='submit') Bid now!
+    if auctionError
+      .error-message= auctionError
+  
+  script(src='/socket.io/socket.io.js')
+  script(src="https://unpkg.com/axios/dist/axios.min.js")
+  script(src="https://unpkg.com/event-source-polyfill/src/eventsource.min.js")
+  script.
+    document.querySelector('#bid-form').addEventListener('submit', (e) => {
+        e.preventDefault();
+        const xhr = new XMLHttpRequest;
+        const errorMessage = document.querySelector('.error-message');
+        axios.post('/good/#{good.id}/bid', {
+            bid: e.target.bid.value,
+            msg: e.target.msg.value
+        })
+        .catch((err) => {
+            console.error(err);
+            alert(err.response.data);
+        })
+        .finally(() => {
+            e.target.bid.value = '';
+            e.target.msg.value = '';
+            errorMessage.textContent = '';
+        });
+    });
+    const es = new EventSource("/sse");
+    const time = document.querySelector('#time');
+    es.onmessage = (e) => {
+        const end = new Date(time.dataset.start);
+        const server = new Date(parseInt(e.data, 10));
+        end.setDate(end.getDate() + 1);
+        if(server >= end){
+            return time.textContent = '00:00:00';
+        }
+        else{
+            const t = end - server;
+            const seconds = ('0' +  Math.floor((t / 1000) % 60)).slice(-2);
+            const minutes = ('0' +  Math.floor((t / 1000 / 60) % 60)).slice(-2);
+            const hours = ('0' + Math.floor((t / 1000 / (60 * 60) % 24))).slice(-2);
+            return time.textContent = hours + ':' + minutes + ':' + seconds;
+        }
+    };
+    const socket = io.connect('http://localhost:8010',{
+        path: '/socket.io'
+    });
+
+    socket.on('bid', (data) => {
+        const div = document.createElement('div');
+        let span = document.createElement('span');
+        span.textContent = data.nick + ' has bid ';
+        const strong = document.createElement('strong');
+        strong.textContent = '$' + data.bid;
+        div.appendChild(span);
+        div.appendChild(strong);
+        if(data.msg) {
+            span = document.createElement('span');
+            span.textContent = `(${data.msg})`;
+            div.appendChild(span);
+        }
+        document.querySelector('#bid').appendChild(div);
+    });
+  script.
+    window.onload = () => {
+        if(new URL(location.href).searchParams.get('auctionError')){
+            alert(new URL(location.href).searchParams.get('auctionError'));
+        }
+    };
